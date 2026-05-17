@@ -1,0 +1,240 @@
+<!-- --- File: index.html --- -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ИИ Ассистент по рискам</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<h1 class="main-title">Оценка рисков ИТ-проекта</h1>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-container">
+    {% for category, message in messages %}
+    <div class="flash-message {{ category }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- Main Dashboard Layout -->
+<div class="dashboard-grid">
+
+    <!-- LEFT COLUMN: THE FORM -->
+    <main class="form-section">
+        <form method="post" action="/create_project" enctype="multipart/form-data" id="projectForm">
+            <div class="form-line">
+                <label for="name">Название проекта:</label>
+                <input type="text" name="name" id="name" required placeholder="например, Внедрение CRM">
+            </div>
+            <div class="form-line">
+                <label for="duration">Длительность:</label>
+                <input type="text" name="duration" id="duration" placeholder="например, 6 месяцев">
+            </div>
+            <div class="form-line">
+                <label for="budget">Бюджет:</label>
+                <input type="text" name="budget" id="budget" placeholder="например, 5 000 000 руб.">
+            </div>
+            <div class="form-line">
+                <label for="lifecycle_type">Модель ЖЦ:</label>
+                <input type="text" name="lifecycle_type" id="lifecycle_type" placeholder="Agile, Waterfall...">
+            </div>
+            <div class="form-line">
+                <label for="dev_type">Тип разработки:</label>
+                <input type="text" name="dev_type" id="dev_type" placeholder="Продукт, Аутстаффинг...">
+            </div>
+            <div class="form-line">
+                <label for="tech_stack">Стек технологий:</label>
+                <input type="text" name="tech_stack" id="tech_stack" placeholder="Python, Django, PostgreSQL">
+            </div>
+            <div class="form-line">
+                <label for="team">Состав команды:</label>
+                <input type="text" name="team" id="team" placeholder="2 бэкенда, 1 фронтенд...">
+            </div>
+            <div class="form-line">
+                <label for="team_skill_level">Уровень квалификации (1.0-5.0):</label>
+                <input type="number" name="team_skill_level" id="team_skill_level"
+                       min="1" max="5" step="0.1" placeholder="3.0">
+            </div>
+            <div class="form-line">
+                <label for="documentation">Документация (.txt, .md):</label>
+                <input type="file" name="documentation" id="documentation" accept=".txt,.md">
+            </div>
+
+            <div class="form-actions">
+                <input type="submit" value="Запустить анализ">
+                <button type="button" id="generateIdeasBtn">Предложить идеи</button>
+                <button type="button" id="applyIdeasBtn" style="display: none;">Применить к форме</button>
+            </div>
+        </form>
+    </main>
+
+    <aside class="sidebar">
+        <div id="loadingIndicator" class="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+            <p>Генерация идей...</p>
+        </div>
+
+        <div id="ideasCard" class="ideas-card" style="display: none;">
+            <div class="ideas-card-header">
+                <h3>Идеи от ИИ</h3>
+            </div>
+            <div id="ideasContent" class="ideas-card-body"></div>
+        </div>
+    </aside>
+
+</div>
+<div id="toast-container"></div> <!-- Контейнер для уведомлений -->
+<script>
+    const generateBtn = document.getElementById('generateIdeasBtn');
+    const applyBtn = document.getElementById('applyIdeasBtn');
+    const loadingDiv = document.getElementById('loadingIndicator');
+    const ideasCard = document.getElementById('ideasCard');
+    const ideasContentDiv = document.getElementById('ideasContent');
+    let currentIdeasText = '';
+
+    /**
+     * Helper: Parses a single line from the AI into structured parts.
+     * Input: "Бюджет: 10 млн руб. Пояснение: Чтобы покрыть риски."
+     * Output: { key: "бюджет", value: "10 млн руб.", explanation: "Чтобы покрыть риски." }
+     */
+    function parseIdeaLine(line) {
+        let cleanLine = line.replace(/^[-•*]\s*/, '').trim();
+        if (!cleanLine) return null;
+
+        let colonIndex = cleanLine.indexOf(':');
+        if (colonIndex === -1) return null;
+
+        let key = cleanLine.substring(0, colonIndex).trim().toLowerCase();
+        let rest = cleanLine.substring(colonIndex + 1).trim();
+
+        let value = rest;
+        let explanation = '';
+
+        const explanationMarker = /Пояснение\s*:/i;
+        const match = rest.match(explanationMarker);
+
+        if (match) {
+            let potentialValue = rest.substring(0, match.index).trim();
+            value = potentialValue.replace(/\.$/, '');
+            explanation = rest.substring(match.index + match[0].length).trim();
+        } else {
+            const dotIndex = rest.indexOf('.');
+            if (dotIndex !== -1) {
+                value = rest.substring(0, dotIndex).trim();
+                explanation = rest.substring(dotIndex + 1).trim();
+            }
+        }
+
+        return {key, value, explanation};
+    }
+
+    function applyIdeasToForm() {
+        if (!currentIdeasText) return;
+        const lines = currentIdeasText.split('\n').filter(l => l.trim());
+
+        lines.forEach(line => {
+            const parsed = parseIdeaLine(line);
+            if (!parsed) return;
+
+            let fieldId = null;
+            const k = parsed.key;
+
+            if (k.includes('длительность') || k.includes('duration')) fieldId = 'duration';
+            else if (k.includes('бюджет') || k.includes('budget')) fieldId = 'budget';
+            else if (k.includes('модель') || k.includes('lifecycle')) fieldId = 'lifecycle_type';
+            else if (k.includes('тип') || k.includes('dev_type')) fieldId = 'dev_type';
+            else if (k.includes('стек') || k.includes('stack')) fieldId = 'tech_stack';
+            else if (k.includes('команда') || k.includes('team') || k.includes('состав')) fieldId = 'team';
+            else if (k.includes('skill') || k.includes('уровень')) fieldId = 'team_skill_level';
+
+            if (fieldId) {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    if (fieldId === 'team_skill_level') {
+                        const num = parsed.value.match(/\d/);
+                        field.value = num ? num[0] : 3;
+                    } else {
+                        field.value = parsed.value;
+                    }
+                }
+            }
+        });
+
+        showToast('Данные успешно применены к форме!');
+    }
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
+    generateBtn.addEventListener('click', function () {
+        const projectName = document.getElementById('name').value.trim();
+        if (!projectName) {
+            alert('Введите название проекта!');
+            return;
+        }
+
+        generateBtn.disabled = true;
+        loadingDiv.style.display = 'flex';
+        ideasCard.style.display = 'none';
+        applyBtn.style.display = 'none';
+
+        const formData = new FormData(document.getElementById('projectForm'));
+
+        fetch('/generate_ideas', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ideas && !data.ideas.includes('Ошибка')) {
+                    currentIdeasText = data.ideas;
+
+                    const lines = currentIdeasText.split('\n').filter(l => l.trim());
+                    ideasContentDiv.innerHTML = lines.map(line => {
+                        const p = parseIdeaLine(line);
+                        if (!p) return '';
+                        return `
+                        <div class="idea-item">
+                            <span class="idea-label">${p.key}</span>
+                            <span class="idea-value">${p.value}</span>
+                            ${p.explanation ? `<span class="idea-explanation">${p.explanation}</span>` : ''}
+                        </div>
+                    `;
+                    }).join('');
+
+                    ideasCard.style.display = 'block';
+                    applyBtn.style.display = 'inline-block';
+                } else {
+                    alert(data.ideas || 'Ошибка генерации.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ошибка соединения.');
+            })
+            .finally(() => {
+                generateBtn.disabled = false;
+                loadingDiv.style.display = 'none';
+            });
+    });
+
+    applyBtn.addEventListener('click', applyIdeasToForm);
+</script>
+
+</body>
+</html>

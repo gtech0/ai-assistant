@@ -1,0 +1,372 @@
+/* =============================================
+   1. VARIABLES & RESET
+   ============================================= */
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --success: #10b981;
+    --success-hover: #059669;
+    --error: #ef4444;
+    --bg-app: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --shadow: 0 4px 12px -2px rgb(0 0 0 / 0.1);
+    --radius: 12px;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+/* =============================================
+   2. GLOBAL COMPONENTS
+   ============================================= */
+.flash-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.flash-message {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: var(--shadow);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.flash-message.success {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.flash-message.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+/* Badges */
+.badge {
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.badge-type { background: #f1f5f9; color: #475569; }
+.badge-factor { background: #eff6ff; color: #1d4ed8; }
+.badge-ai { background: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+
+/* Buttons - unified */
+button, .btn, input[type="submit"] {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+input[type="submit"] { background: var(--primary); color: white; }
+#generateIdeasBtn { background: #64748b; color: white; }
+#applyIdeasBtn { background: var(--success); color: white; }
+
+/* Toast */
+#toast-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 10000;
+}
+
+.toast {
+    background: #1e293b;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: var(--shadow);
+    animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 2.7s forwards;
+}
+
+@keyframes toastIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toastOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+/* =============================================
+   3. DASHBOARD LAYOUT (index.html) — THE FIX
+   ============================================= */
+body:not(.table-page) {
+    padding: 40px 20px;
+}
+
+.main-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 550px;
+    gap: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+    align-items: stretch;
+}
+
+.form-section {
+    width: 100%;
+}
+
+form {
+    background: var(--bg-card);
+    padding: 35px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.form-line {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.2rem;
+    gap: 15px;
+}
+
+.form-line label {
+    flex: 0 0 220px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.form-line input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.form-actions {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+}
+
+.sidebar {
+    width: 100%;
+}
+
+.loading-spinner,
+.ideas-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    padding: 21px 20px 20px 25px;
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner {
+    width: 35px;
+    height: 35px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ideas-card-header {
+    padding: 4px 0 4px;
+
+    margin-bottom: 16px;
+}
+
+.ideas-card-body {
+    overflow-y: auto;
+    max-height: calc(100vh - 369px);
+    padding-bottom: 6px;
+}
+
+.idea-item {
+    background: white;
+    border-left: 4px solid var(--primary);
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.idea-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.idea-value {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.idea-explanation {
+    display: block;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+/* =============================================
+   4. TABLE LAYOUT (risks.html)
+   ============================================= */
+.table-page {
+    padding: 40px 20px;
+}
+
+.header-section {
+    max-width: 1400px;
+    margin: 0 auto 30px auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.table-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+}
+
+.risk-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.risk-table th {
+    background: #f8fafc;
+    padding: 14px 12px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--border);
+}
+
+.risk-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.risk-table tr:hover { background: #f8fafc; }
+
+.text-left   { text-align: left; }
+.text-center { text-align: center; }
+
+.table-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.table-input:focus {
+    background: white;
+    border-color: var(--primary);
+    outline: none;
+}
+
+.risk-name-text { font-weight: 600; color: var(--text-main); }
+
+.criticality-value {
+    font-weight: 800;
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.btn-save-row {
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: opacity 0.2s;
+}
+
+.risk-table tr:hover .btn-save-row { opacity: 1; }
+
+.table-actions {
+    max-width: 1400px;
+    margin: 30px auto;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.btn-export { color: var(--text-main); text-decoration: none; font-weight: 600; }
+.btn-back   { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+/* =============================================
+   5. RESPONSIVE
+   ============================================= */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar { order: -1; }       /* Ideas on top on mobile */
+
+    .ideas-card, .loading-spinner {
+        min-height: 300px;         /* sensible floor when stacked */
+    }
+}

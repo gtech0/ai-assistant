@@ -1,0 +1,90 @@
+<!-- --- File: risks.html --- -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Реестр рисков</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="table-page">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for category, message in messages %}
+        <div class="flash-message {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="header-section">
+    <h1 class="main-title">Проект: {{ project.name }}</h1>
+    <div class="table-actions">
+        <a href="{{ url_for('export_excel', project_id=project.id) }}" class="btn-export">📥 Скачать Excel</a>
+        <a href="/" class="btn-back">← Вернуться к настройкам</a>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="risk-table">
+        <thead>
+            <tr>
+                <th class="text-left">Название</th>
+                <th class="text-center">Тип</th>
+                <th class="text-center">Фактор</th>
+                <th class="text-center">Вероятность</th>
+                <th class="text-center">Влияние</th>
+                <th class="text-center">Крит.</th>
+                <th class="text-left">Владелец</th>
+                <th class="text-left">Стратегия</th>
+                <th class="text-center">Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for risk in risks %}
+            <tr>
+                <td class="text-left risk-name">
+                    <div class="risk-name-wrapper">
+                        <strong class="risk-name-text">{{ risk.name }}</strong>
+                        {% if risk.is_llm_generated %}<span class="badge badge-ai">ИИ</span>{% endif %}
+                    </div>
+                </td>
+                <td class="text-center">
+                    <span class="badge badge-type">{{ risk.risk_type or '—' }}</span>
+                </td>
+                <td class="text-center">
+                    <span class="badge badge-factor">{{ risk.factor_category or '—' }}</span>
+                </td>
+                <td class="text-center">
+                    <input type="number" step="0.01" name="probability" value="{{ risk.probability }}" form="form_{{ risk.id }}" class="table-input">
+                </td>
+                <td class="text-center">
+                    <input type="number" name="impact" value="{{ risk.impact }}" form="form_{{ risk.id }}" class="table-input">
+                </td>
+                <td class="text-center">
+                    <span class="criticality-value">{{ "%.2f"|format(risk.criticality) }}</span>
+                </td>
+                <td class="text-left">
+                    <input type="text" name="owner" value="{{ risk.owner }}" form="form_{{ risk.id }}" class="table-input">
+                </td>
+                <td class="text-left">
+                    <input type="text" name="strategy" value="{{ risk.strategy }}" form="form_{{ risk.id }}" class="table-input">
+                </td>
+                <td class="text-center">
+                    <button type="submit" form="form_{{ risk.id }}" class="btn-save-row" title="Сохранить изменения">💾</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="hidden-forms">
+    {% for risk in risks %}
+    <form id="form_{{ risk.id }}" action="{{ url_for('update_risk', risk_id=risk.id) }}" method="POST" style="display: none;"></form>
+    {% endfor %}
+</div>
+
+</body>
+</html>
