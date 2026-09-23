@@ -9,5 +9,6 @@ dependencies = [
     "openpyxl>=3.1.5",
     "python-dotenv>=1.2.2",
     "requests>=2.34.2",
-    "llama-cpp-python>=0.3.23"
+    "llama-cpp-python>=0.3.30",
+    "pyinstaller>=6.21.0",
 ]

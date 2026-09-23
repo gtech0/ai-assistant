@@ -10,8 +10,8 @@ class LLMClient:
         self.engine = None
         try:
             self.engine = Llama(
-                model_path=Config.LLAMA_MODEL_PATH,
-                n_gpu_layers=Config.LLAMA_N_GPU_LAYERS,
+                model_path=Config.MODEL_PATH,
+                n_gpu_layers=Config.N_GPU_LAYERS,
                 n_ctx=Config.LLAMA_CONTEXT_SIZE,
                 verbose=False
             )

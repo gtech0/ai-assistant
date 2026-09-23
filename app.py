@@ -4,7 +4,22 @@ from models import db, Project, Risk
 from llm_client import LLMClient
 from report_service import ReportService
 
-app = Flask(__name__)
+import os
+import sys
+
+def resource_path(relative_path):
+    try:
+        # PyInstaller creates a temporary folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+app = Flask(__name__,
+            template_folder=resource_path('templates'),
+            static_folder=resource_path('static'))
+
 app.config.from_object(Config)
 db.init_app(app)
 llm_client = LLMClient()
