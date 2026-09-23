@@ -12,7 +12,7 @@ class LLMClient:
             self.engine = Llama(
                 model_path=Config.MODEL_PATH,
                 n_gpu_layers=Config.N_GPU_LAYERS,
-                n_ctx=Config.LLAMA_CONTEXT_SIZE,
+                n_ctx=Config.CONTEXT_SIZE,
                 verbose=False
             )
             print("Llama-CPP Engine Loaded.")
@@ -25,9 +25,9 @@ class LLMClient:
             output = self.engine.create_chat_completion(
                 messages=messages,
                 temperature=temperature,
-                max_tokens=Config.LLAMA_MAX_TOKENS,
-                top_p=Config.LLAMA_TOP_P,
-                repeat_penalty=Config.LLAMA_REPEAT_PENALTY,
+                max_tokens=Config.MAX_TOKENS,
+                top_p=Config.TOP_P,
+                repeat_penalty=Config.REPEAT_PENALTY,
             )
             return output["choices"][0]["message"]["content"].strip()
         except Exception as e:
@@ -37,14 +37,14 @@ class LLMClient:
     def generate_risks(self, project_params, doc_text=""):
         messages = _get_risk_messages(project_params, doc_text)
         for _ in range(3):
-            res = self._chat_completion(messages, Config.LLAMA_TEMPERATURE_RISKS)
+            res = self._chat_completion(messages, Config.TEMPERATURE_RISKS)
             risks = self._parse_json_risks(res)
             if risks: return risks
         return []
 
     def generate_ideas(self, project_params, doc_text=""):
         messages = _get_ideas_messages(project_params, doc_text)
-        res = self._chat_completion(messages, Config.LLAMA_TEMPERATURE_IDEAS)
+        res = self._chat_completion(messages, Config.TEMPERATURE_IDEAS)
         return res.strip().replace('**', '').replace('*', '')
 
     def _parse_json_risks(self, text):
